@@ -25,7 +25,16 @@ Make sure you have the following installed:
 
 - Python 3.x
 - `requests` library
-
+  - Installation:
+    - Debian and Debian-Based Distros (like Ubuntu):
+      - Using apt
+      ```bash
+      sudo apt install python3-requests
+      ```
+      - Using pip
+      ```bash
+      pip3 install requests
+      ```
 
 #### Usage
 
@@ -41,7 +50,7 @@ Make sure you have the following installed:
    python task_1.py
    ```
    or
-      ```bash
+   ```bash
    ./task_1.py
    ```
 
