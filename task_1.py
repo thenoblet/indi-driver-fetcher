@@ -9,6 +9,9 @@ changelog files, and the latest commit hash with the associated commit date.
 The script handles GitHub rate limits and uses basic authentication with a
 GitHub Personal Access Token. Results are printed to standard output.
 
+This script includes error handling for missing modules and provides
+installation instructions.
+
 Modules:
     - requests: To make HTTP requests to the GitHub API.
     - json: To parse and handle JSON data from API responses.
@@ -34,11 +37,52 @@ Constants:
     - BASE_URL: Base URL of the GitHub repository "indi-3rdparty".
 """
 
+import sys
+import os
+
+
+def check_modules():
+    """
+    Check for required modules and provide installation instructions if missing.
+    This function run before driver checks start.
+
+    Raises:
+        SystemExit: If any required modules are missing, the function prints
+                    installation instructions and exits with status code 1.
+    """
+    required_modules = {
+        'requests': 'python3-requests',
+        'json': 'built-in',
+        'time': 'built-in',
+        're': 'built-in',
+        'datetime': 'built-in'
+    }
+
+    missing_modules = []
+
+    for module, package in required_modules.items():
+        try:
+            __import__(module)
+        except ImportError:
+            missing_modules.append((module, package))
+
+    if missing_modules:
+        print("\nThe following required modules are missing:", file=sys.stderr)
+        for module, package in missing_modules:
+            if package == 'built-in':
+                print(f"  - {module} (This is a built-in module and should be available)\n", file=sys.stderr)
+            else:
+                print(f"  - {module} (Install with: sudo apt install {package})\n", file=sys.stderr)
+        sys.exit(1)
+
+
+# Check for required modules before importing
+check_modules()
+
+
 import requests
 import json
-import sys
 import time
-import os
 import re
 from requests.auth import HTTPBasicAuth
 from datetime import datetime
