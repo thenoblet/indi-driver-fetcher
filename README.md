@@ -45,15 +45,27 @@ Make sure you have the following installed:
    ```
 
 2. Run the script:
+   - **Note**: [IGNORE DIRS FILE] is a file containing the directories you wish to ignore.
+   If not specified, program falls back on default settings.
 
    ```bash
-   python task_1.py
+   python task_1.py [IGNORE DIRS FILE]
    ```
    or
    ```bash
-   ./task_1.py
+   ./task_1.py [IGNORE DIRS FILE]
    ```
 
+   - **Example:**
+   ```bash
+   python task_1.py ignore_dirs.txt
+   
+   OR
+   
+   ./task_1.py ignore_dirs.txt
+   ```
+   where `ignore_dirs.txt` is a file containing all the directories you'd like the program to ignore.
+   
 This will initiate the process of fetching driver information and display it in the console.
 
 #### Functions
