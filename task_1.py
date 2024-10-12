@@ -92,6 +92,7 @@ from datetime import datetime
 sys.stdout.reconfigure(line_buffering=True)
 
 # GitHub Personal Access Token for API authentication
+
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 if not GITHUB_TOKEN:
     print("Please set the GITHUB_TOKEN environment variable", file=sys.stderr)
@@ -338,3 +339,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     main(args.ignore_file)
+
