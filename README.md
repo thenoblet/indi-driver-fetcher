@@ -221,7 +221,7 @@ You must configure a GitLab API token for accessing private repositories or avoi
 
 ## Error Handling
 
-The script handles various potential issues, including:
+The script handles various potential errors, including:
 
 - Network errors (e.g., connection timeouts)
 - Handling unavailable changelog files
