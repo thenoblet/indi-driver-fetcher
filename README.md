@@ -25,7 +25,16 @@ Make sure you have the following installed:
 
 - Python 3.x
 - `requests` library
-
+  - Installation:
+    - Debian and Debian-Based Distros (like Ubuntu):
+      - Using apt
+      ```bash
+      sudo apt install python3-requests
+      ```
+      - Using pip
+      ```bash
+      pip3 install requests
+      ```
 
 #### Usage
 
@@ -41,7 +50,7 @@ Make sure you have the following installed:
    python task_1.py
    ```
    or
-      ```bash
+   ```bash
    ./task_1.py
    ```
 
@@ -99,4 +108,124 @@ In case of an error, a message will be printed to standard error, and the script
 
 ### Script 2 - `task_2.py`
 
- TODO: *(Add detailed description here once the script is completed)*
+This script interacts with the Salsa GitLab API to retrieve information about Debian-packaged INDI drivers. It fetches the package names, their Debian version from changelog files, and the corresponding Git commit hash. The script allows for asynchronous requests using `aiohttp` to improve performance, and it provides an option to skip certain packages or directories by specifying an ignore file.
+
+#### Table of Contents
+
+- [Prerequisites](#prerequisites)
+- [Usage](#usage)
+- [Functions](#functions)
+- [Environment Variables](#environment-variables)
+- [Error Handling](#error-handling)
+
+#### Prerequisites
+
+Make sure you have the following installed:
+
+- Python 3.6+
+- `aiohttp` library
+  - Installation:
+    - Debian and Debian-Based Distros (like Ubuntu):
+      - Using apt
+      ```bash
+      sudo apt install python3-aiohttp
+      ```
+      - Using pip
+      ```bash
+      pip3 install aiohttp
+      ```
+
+#### Usage
+
+1. Set up the Salsa GitLab API token by configuring it in the script or passing it via environment variables.
+   ```bash
+   export GITLAB_TOKEN='your_personal_access_token'  # Salsa access token
+   ```
+2. Run the script:
+   - **Note**: The `[IGNORE DIRS FILE]` is optional. It contains the directories you want to skip during the fetch process. If not provided, the script defaults to fetch all.
+
+   ```bash
+   python task_2.py [IGNORE DIRS FILE]
+   ```
+   or
+   ```bash
+   ./task_2.py [IGNORE DIRS FILE]
+   ```
+
+   - **Example:**
+   ```bash
+   python task_2.py ignore_dirs.txt
+   
+   OR
+   
+   ./task_2.py ignore_dirs.txt
+   ```
+   where `ignore_dirs.txt` is a file containing all the directories you'd like the program to ignore.
+
+This will fetch the Debian-packaged INDI drivers' names, versions from changelogs, and their Git commit hashes, printing them to the console.
+
+#### Functions
+
+### `main()`
+The entry point of the script, responsible for orchestrating the fetch process and outputting driver information.
+
+### `fetch_project_list()`
+Fetches a list of projects from the Salsa GitLab API under the Debian Astro team, specifically targeting INDI-related packages.
+
+- **Returns**: A list of project names available in the Debian Astro team repository.
+
+### `fetch_package_info(project_name)`
+Retrieves the Debian version of the package and the corresponding Git hash by parsing the changelog file of the provided project.
+
+- **Arguments**:
+  - `project_name`: The name of the project whose changelog and version are being fetched.
+  
+- **Returns**: A dictionary containing the project name, version, and Git commit hash.
+
+### `extract_version(changelog_content)`
+Extracts the version number from the changelog content.
+
+- **Arguments**:
+  - `changelog_content`: The content of the changelog file.
+  
+- **Returns**: The extracted version or "Unknown" if not found.
+
+### `try_get_changelog(project_name, branch)`
+Attempts to retrieve the changelog file from different branches of the project's repository.
+
+- **Arguments**:
+  - `project_name`: The name of the project whose changelog is being retrieved.
+  - `branch`: The branch to look for the changelog file in.
+  
+- **Returns**: The content of the changelog file or `None` if not found.
+
+### `get_default_branch(project_name)`
+Retrieves the default branch of the project.
+
+- **Arguments**:
+  - `project_name`: The name of the project.
+  
+- **Returns**: The name of the default branch, typically "master" or "main".
+
+### `parse_ignore_file(ignore_file_path)`
+Parses the ignore file to get a list of directories or projects to skip during the fetch process.
+
+- **Arguments**:
+  - `ignore_file_path`: Path to the file that contains directories or project names to be ignored.
+  
+- **Returns**: A list of directories or projects to ignore.
+
+## Environment Variables
+
+You must configure a GitLab API token for accessing private repositories or avoiding API rate limits. The token can be set as an environment variable named `GITLAB_TOKEN`.
+
+## Error Handling
+
+The script handles various potential issues, including:
+
+- Network errors (e.g., connection timeouts)
+- Handling unavailable changelog files
+- Handling non-existent or empty branches
+
+In case of an error, the script logs the message and skips the problematic project or directory, continuing the fetch process for others.
+
