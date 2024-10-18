@@ -335,8 +335,8 @@ async def try_get_changelog(session, headers, project_id, paths, branches):
         branches (list): A list of branches to check.
 
     Returns:
-        tuple: A tuple containing the changelog content (or None) and the branch
-        where it was found.
+        tuple: A tuple containing the changelog content (or None) and the
+        branch where it was found.
     """
     """Try multiple possible changelog paths in different branches."""
     for branch in branches:
