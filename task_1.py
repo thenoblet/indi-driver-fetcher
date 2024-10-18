@@ -9,6 +9,9 @@ changelog files, and the latest commit hash with the associated commit date.
 The script handles GitHub rate limits and uses basic authentication with a
 GitHub Personal Access Token. Results are printed to standard output.
 
+This script includes error handling for missing modules and provides
+installation instructions.
+
 Modules:
     - requests: To make HTTP requests to the GitHub API.
     - json: To parse and handle JSON data from API responses.
@@ -34,11 +37,53 @@ Constants:
     - BASE_URL: Base URL of the GitHub repository "indi-3rdparty".
 """
 
-import requests
-import json
 import sys
-import time
 import os
+
+
+def check_modules():
+    """
+    Check for required modules and provide installation instructions if missing.
+    This function run before driver checks start.
+
+    Raises:
+        SystemExit: If any required modules are missing, the function prints
+                    installation instructions and exits with status code 1.
+    """
+    required_modules = {
+        'requests': 'python3-requests',
+        'json': 'built-in',
+        'time': 'built-in',
+        're': 'built-in',
+        'datetime': 'built-in'
+    }
+
+    missing_modules = []
+
+    for module, package in required_modules.items():
+        try:
+            __import__(module)
+        except ImportError:
+            missing_modules.append((module, package))
+
+    if missing_modules:
+        print("\nThe following required modules are missing:", file=sys.stderr)
+        for module, package in missing_modules:
+            if package == 'built-in':
+                print(f"  - {module} (This is a built-in module and should be available)\n", file=sys.stderr)
+            else:
+                print(f"  - {module} (Install with: sudo apt install {package})\n", file=sys.stderr)
+        sys.exit(1)
+
+
+# Lets check for required modules before importing
+check_modules()
+
+
+import requests
+import argparse
+import json
+import time
 import re
 from requests.auth import HTTPBasicAuth
 from datetime import datetime
@@ -62,14 +107,36 @@ TIMEOUT = 10
 BASE_URL = "https://api.github.com/repos/indilib/indi-3rdparty"
 
 
-def main():
-    """Main function to fetch and display driver information."""
+def main(ignore_file=None):
+    """
+    Main function to fetch and display driver information.
+
+    Args:
+        ignore_file (str, optional): Path to a file containing directories to ignore.
+    """
+    default_ignore_dirs = ['.circleci', '.github', 'cmake_modules', 'debian', 'examples', 'scripts', 'spec', 'obsolete']
+
+    if ignore_file and (ignore_dirs := parse_ignore_file(ignore_file)) is not None:
+        print(f"Using custom dir. ignore list from {ignore_file}")
+    else:
+        ignore_dirs = default_ignore_dirs
+        print("Using default ignore list")
+
+    if ignore_dirs is None:
+        ignore_dirs = default_ignore_dirs
+
+    print(f"Directories being ignored: {ignore_dirs}\n")
     print("Starting to fetch drivers...")
-    drivers = get_drivers()
-    for driver in drivers:
-        print(
-            f"Driver: {driver['name']}, Version: {driver['version']}, Latest Git Hash: {driver['latest_git_hash']}"
-        )
+
+    try:
+        drivers = get_drivers(ignore_dirs)
+        for driver in drivers:
+            print(
+                f"Driver: {driver['name']}, Version: {driver['version']}, Latest Git Hash: {driver['latest_git_hash']}"
+            )
+    except KeyboardInterrupt:
+        print("\nProgram terminated. Thank you for using this program!")
+        sys.exit(0)
 
 
 def rate_limited_get(url, headers=None):
@@ -106,7 +173,7 @@ def rate_limited_get(url, headers=None):
         time.sleep(1)
 
 
-def get_drivers():
+def get_drivers(ignore_dirs):
     """
     Fetch a list of drivers from the GitHub repository.
 
@@ -120,7 +187,7 @@ def get_drivers():
     url = f"{BASE_URL}/contents"
 
     try:
-        print("Fetching repository contents...")
+        print("Fetching repository contents...\n")
         response = rate_limited_get(url)
         response.raise_for_status()
         contents = json.loads(response.text)
@@ -128,8 +195,6 @@ def get_drivers():
         if not isinstance(contents, list):
             print("Received a non-list response:", contents, file=sys.stderr)
             return []
-
-        ignore_dirs = ['.circleci', '.github', 'cmake_modules', 'debian', 'examples', 'scripts', 'spec', 'obsolete']
 
         for item in contents:
             if item['type'] == 'dir' and item['name'] not in ignore_dirs:
@@ -220,5 +285,56 @@ def extract_version(file_content):
     return "Unknown"
 
 
+def parse_ignore_file(file_path):
+    """
+    Parse an ignore file and return a list of directories to be ignored.
+
+    This function reads a specified file, processes each line to extract
+    directories to ignore, and returns them as a list. Comments in the file,
+    which are marked by the '#' character, are ignored. Lines can also contain
+    multiple directories separated by commas or whitespace.
+    
+    Args:
+        file_path (str): The path to the ignore file to be parsed
+    
+    Returns:
+        list or None: A list of directories to ignore if the file was successfully
+        parsed. Returns None if the file could not be found, cannot be read, or
+        if an unexpected error occurs.
+    """  
+    ignore_list = []
+
+    try:
+        with open(file_path, 'r') as f:
+            for line in f:
+                line = line.split('#', 1)[0].strip()
+                if line:
+                    dirs = re.split(r'[,\s]+', line)
+                    ignore_list.extend(dirs)
+
+        ignore_list = [directory for directory in ignore_list if directory]
+
+    except FileNotFoundError:
+        print(f"Error: The file '{file_path}' was not found.")
+        return None
+    except IOError:
+        print(f"Error: Could not read the file '{file_path}'.")
+        return None
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+        return None
+
+    return ignore_list
+
+
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(
+        description="Fetch INDI 3rd-party driver information"
+    )
+    parser.add_argument(
+        "ignore_file", nargs="?",
+        help="Path to file containing directories to ignore"
+    )
+    args = parser.parse_args()
+
+    main(args.ignore_file)
