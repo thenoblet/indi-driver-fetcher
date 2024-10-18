@@ -213,7 +213,7 @@ def get_drivers(ignore_dirs):
                     if commit_info:
                         commit_date = datetime.strptime(commit_info[0]['commit']['committer']['date'], "%Y-%m-%dT%H:%M:%SZ")
                         formatted_date = commit_date.strftime("%Y%m%d")
-                        short_hash = commit_info[0]['sha'][:7]
+                        short_hash = commit_info[0]['sha'][:8]
                         git_info = f"git{formatted_date}.{short_hash}"
                     else:
                         git_info = "Unknown"
