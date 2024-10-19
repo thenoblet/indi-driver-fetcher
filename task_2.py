@@ -22,13 +22,6 @@ Main functionalities include:
 
 import sys
 import os
-import argparse
-import aiohttp
-import asyncio
-import json
-import re
-from urllib.parse import quote_plus
-from aiohttp.client_exceptions import ClientError
 
 
 def check_modules():
@@ -65,6 +58,17 @@ def check_modules():
                 print(
                     f"  - {module} (Install with: sudo apt install {package})\n", file=sys.stderr)
         sys.exit(1)
+
+
+check_modules()
+
+
+import argparse
+import aiohttp
+import asyncio
+import re
+from urllib.parse import quote_plus
+from aiohttp.client_exceptions import ClientError
 
 
 # GitLab API configuration
@@ -434,8 +438,6 @@ if __name__ == "__main__":
         help="Path to file containing directories to ignore"
     )
 
-    args = parser.parse_args()  # Checking for required modules
-
-    check_modules()
+    args = parser.parse_args()
 
     asyncio.run(main(args.ignore_file))
