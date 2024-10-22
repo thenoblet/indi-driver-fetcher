@@ -1,4 +1,5 @@
-# tests.py
+#!/usr/bin/env python3
+
 import unittest
 from unittest.mock import patch
 from task_1 import check_modules
