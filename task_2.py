@@ -96,47 +96,43 @@ async def main(ignore_file=None):
             print(f"Using custom dir. ignore list from {ignore_file}")
         else:
             ignore_dirs = default_ignore_dirs
-            print("Using default ignore list")
+            print("Using default package ignore list")
 
         if ignore_dirs is None:
             ignore_dirs = default_ignore_dirs
 
-        print(f"Directories being ignored: {ignore_dirs}\n")
+        print(f"Packages being ignored: {ignore_dirs}\n")
         print('Getting Debian Astro Team ID...')
 
         headers = {'PRIVATE-TOKEN': GITLAB_TOKEN}
 
-        group_id = await get_debian_astro_team_id(session, headers)
+        group_id = await get_astro_team_id(session, headers)
         if group_id is None:
             print(
                 f"Failed to find the {DEBIAN_ASTRO_TEAM} group.", file=sys.stderr)
             sys.exit(1)
 
-        print('Getting packages...\n')
+        print('Getting info about packages...\n')
         try:
-            packages = await get_debian_indi_packages(session, headers, group_id, ignore_dirs)
+            packages = await get_indi_packages(session, headers, group_id, ignore_dirs)
             if packages is None:
                 print("Error fetching packages...", file=sys.stderr)
                 sys.exit(1)
 
-            # Sort packages by name for better readability
             packages.sort(key=lambda x: x['name'])
-
+            
             for package in packages:
-                print(f"Package: {package['name']}")
-                print(f"  Version: {package['debian_version']}")
-                print(f"  Latest Git Hash: {package['git_hash']}")
-                print()
+                print(f"Package: {package['name']}, Version: {package['debian_version']}")
 
         except KeyboardInterrupt:
-            print("\nProgram terminated by user. Thank you for using this program!")
+            print("\nProgram terminated. Thank you for using this program!")
             sys.exit(0)
         except Exception as e:
             print(f"\nUnexpected error occurred: {e}", file=sys.stderr)
             sys.exit(1)
 
 
-async def get_debian_astro_team_id(session, headers, retries=5):
+async def get_astro_team_id(session, headers, retries=5):
     """
     Get the GitLab group ID for the Debian Astro team.
 
@@ -175,7 +171,7 @@ async def get_debian_astro_team_id(session, headers, retries=5):
     return None
 
 
-async def get_debian_indi_packages(session, headers, group_id, ignore_dirs):
+async def get_indi_packages(session, headers, group_id, ignore_dirs):
     """
     Fetch all INDI-related packages from the Debian Astro team.
 
@@ -244,6 +240,8 @@ async def get_package_info(session, headers, project):
     Returns:
         dict: A dictionary containing package information (name, version, git hash).
     """
+    # print(f"Processing {project['name']}...")
+    
     try:
         # First, lets get the default branch, yeah?
         default_branch = await get_default_branch(session, headers, project['id'])
@@ -275,11 +273,10 @@ async def get_package_info(session, headers, project):
             'orig/debian/changelog'
         ]
 
-        changelog, found_branch = await try_get_changelog(
+        changelog, found_branch = await get_changelog(
             session, headers, project['id'], changelog_paths, branches
         )
 
-        # Extract version information
         version = "Unknown"
         if changelog:
             version = extract_version(changelog)
@@ -287,7 +284,6 @@ async def get_package_info(session, headers, project):
             print(
                 f"Warning: No changelog found for {project['name']}", file=sys.stderr)
 
-        # Format the Git hash with date
         git_hash = "Unknown"
         if latest_commit:
             last_activity_date = project.get('last_activity_at', "Unknown")
@@ -327,7 +323,7 @@ def create_error_package_info(project):
     }
 
 
-async def try_get_changelog(session, headers, project_id, paths, branches):
+async def get_changelog(session, headers, project_id, paths, branches):
     """
     Try to retrieve the changelog from different paths and branches.
 
